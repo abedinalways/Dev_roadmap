@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import Badge from '@/components/ui/Badge';
 
 const navigation = [
   {
     section: 'Getting Started',
+    defaultOpen: true,
     items: [
       { name: 'Roadmap Overview', href: '/dashboard/roadmap', icon: '🗺️' },
     ],
@@ -58,32 +60,37 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(navigation.map((g) => [g.section, g.defaultOpen ?? false]))
+  );
+
+  const toggleSection = (section: string) => {
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
 
   return (
     <>
-      {/* Mobile backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar - fixed on desktop, drawer on mobile */}
       <aside
-        className={`fixed left-0 top-0 z-50 h-full w-64 bg-gray-50 border-r border-gray-200 overflow-y-auto transition-transform duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 z-50 h-screen w-64 bg-slate-900 text-slate-100 shadow-2xl transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2" onClick={onClose}>
-            <span className="text-xl">🚀</span>
-            <span className="font-bold text-gray-900">Dev Roadmap</span>
+        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+          <Link href="/dashboard" className="flex items-center gap-2.5 group" onClick={onClose}>
+            <span className="text-2xl">🚀</span>
+            <span className="font-bold text-white tracking-tight">Dev Roadmap</span>
           </Link>
           <button
             onClick={onClose}
-            className="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             aria-label="Close menu"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,42 +98,80 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </svg>
           </button>
         </div>
-        <p className="text-xs text-gray-500 px-4 pb-2 -mt-2">Junior to Senior Frontend</p>
 
-        <nav className="p-4 space-y-6">
-          {navigation.map((group) => (
-            <div key={group.section}>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                {group.section}
-              </h3>
-              <div className="space-y-1">
-                {group.items.map((item) => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={onClose}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                      }`}
-                    >
-                      <span className="text-lg">{item.icon}</span>
-                      <span className="flex-1">{item.name}</span>
-                      {'difficulty' in item && item.difficulty && (
-                        <Badge variant={difficultyColors[item.difficulty]} size="sm">
-                          {item.difficulty}
-                        </Badge>
-                      )}
-                    </Link>
-                  );
-                })}
+        <p className="text-[11px] font-medium text-slate-500 uppercase tracking-widest px-5 pt-4 pb-2">
+          Junior to Senior Frontend
+        </p>
+
+        <nav className="p-3 space-y-1 h-[calc(100vh-140px)] overflow-y-auto no-scrollbar">
+          {navigation.map((group) => {
+            const isSectionOpen = openSections[group.section];
+            return (
+              <div key={group.section} className="mb-1">
+                <button
+                  onClick={() => toggleSection(group.section)}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left group"
+                >
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider group-hover:text-slate-200 transition-colors">
+                    {group.section}
+                  </span>
+                  <svg
+                    className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${isSectionOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    isSectionOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <div className="space-y-0.5 pt-1 pb-2">
+                    {group.items.map((item) => {
+                      const isActive = pathname === item.href;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={onClose}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
+                            isActive
+                              ? 'bg-blue-500/15 text-blue-400 border-l-2 border-blue-400 pl-2.5'
+                              : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                          }`}
+                        >
+                          <span className="text-base flex-shrink-0">{item.icon}</span>
+                          <span className="flex-1 truncate">{item.name}</span>
+                          {'difficulty' in item && item.difficulty && (
+                            <Badge variant={difficultyColors[item.difficulty]} size="sm" dark>
+                              {item.difficulty}
+                            </Badge>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </nav>
+
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">
+              U
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">User</p>
+              <p className="text-[11px] text-slate-400 truncate">Frontend Dev</p>
+            </div>
+          </div>
+        </div>
       </aside>
     </>
   );
